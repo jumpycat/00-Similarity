@@ -1,0 +1,9 @@
+
+
+
+AVG_SIZE = 2  #特征图池化降采样
+EPOCH = 100
+BATCH_SIZE = 64
+LR = 0.01
+SIZE = 256
+LENGTH = 10000
