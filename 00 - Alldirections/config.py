@@ -1,6 +1,4 @@
 
-
-
 AVG_SIZE = 2  #特征图池化降采样
 EPOCH = 100
 BATCH_SIZE = 64

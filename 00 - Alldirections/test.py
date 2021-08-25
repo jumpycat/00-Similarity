@@ -1,4 +1,4 @@
-from Alldirections.resmodel import resnet18
+from resmodel import resnet18
 from torchsummary import summary
 from torch_train import DealDataset
 net = resnet18().to('cuda')
