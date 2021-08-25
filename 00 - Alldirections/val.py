@@ -80,7 +80,7 @@ def getValdata(size):
     return torch.stack(imgs, dim=0)
 
 
-net = torch.load('trained_models/epoch-050-loss-0.060.pkl')
+net = torch.load(r'C:\Users\jumpycat\Desktop\00-YunshuDai\epoch-050-loss-0.060.pkl')
 
 
 def showHist():
