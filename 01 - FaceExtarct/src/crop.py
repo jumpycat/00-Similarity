@@ -4,6 +4,10 @@ import torch
 import cv2
 from config import *
 
+SCALE = 1.4
+GAP = 5
+
+
 face_detector = FaceDetector()
 face_detector.load_checkpoint("RetinaFace-Resnet50-fixed.pth")
 torch.set_grad_enabled(False)

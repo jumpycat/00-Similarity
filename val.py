@@ -44,7 +44,7 @@ def Calsim(x):
 
 
 def getValdata(size):
-    dst_test_path = r'D:\DATA\DeepFake\test/'
+    dst_test_path = r'D:\DATA\DeepFake\train/'
     test_real_video_paths = os.listdir(dst_test_path + 'real/')
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -62,7 +62,6 @@ def getValdata(size):
     NUM_real = len(test_real_imgs)
 
     imgs = []
-    labels = []
     for i in range(size):
         if np.random.randint(0, 2):
             video_index = np.random.randint(0, NUM_fake)
@@ -70,19 +69,18 @@ def getValdata(size):
             img_path = test_fake_imgs[video_index][img_index]
             img = default_loader(img_path)
             imgs.append(img)
-            labels.append(0)
+
         else:
             video_index = np.random.randint(0, NUM_real)
             img_index = np.random.randint(0, len(test_real_imgs[video_index]))
             img_path = test_real_imgs[video_index][img_index]
             img = default_loader(img_path)
             imgs.append(img)
-            labels.append(1)
 
-    return torch.stack(imgs, dim=0),labels
+    return torch.stack(imgs, dim=0)
 
 
-net = torch.load(r'trained_models\epoch-050-loss-0.060.pkl')
+net = torch.load(r'C:\Users\jumpycat\Desktop\00-YunshuDai\epoch-050-loss-0.060.pkl')
 
 
 def showHist():
@@ -122,16 +120,4 @@ def showMask():
         plt.imshow(np.transpose(inputs[i], (1, 2, 0)))
     plt.show()
 
-def calacc():
-    ret = 0
-    for i in range(1000):
-        inputs,labels = getValdata(32)
-        input = inputs.cuda()
-        output1,output2 = net(input)
-        outputs = np.array(np.mean(torch.sigmoid(output1.detach().cpu()).numpy(),axis=(1,2,3))>0.9,dtype=int)
-        res = np.sum(outputs==np.array(labels))
-        ret += res
-        # outputs = list(np.mean(output1.detach().cpu().numpy(),axis=(1,2,3)))
-    print(ret/32000)
-
-calacc()
+showMask()
