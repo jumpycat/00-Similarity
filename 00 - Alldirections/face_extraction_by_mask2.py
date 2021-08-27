@@ -44,6 +44,7 @@ def crop(video_path,type,split):
             c40_success, c40_frame = c40_vid.retrieve()
             msk_success, msk_frame = msk_vid.retrieve()
             msk_frame = cv2.cvtColor(msk_frame,cv2.COLOR_BGR2GRAY)>0
+
             try:
                 row = np.mean(msk_frame,axis=1)
                 t = np.nonzero(row)[0][0]
@@ -98,7 +99,7 @@ def crop(video_path,type,split):
 
 def cropreal():
     split = ['train', 'test', 'val']
-    type = ['NeuralTextures']
+    type = ['Face2Face','FaceSwap','NeuralTextures']
     for j in type:
         src_ = dst_path + j + r'\\' + 'raw' + '/'
         for k in split:
@@ -110,4 +111,45 @@ def cropreal():
                     crop(video_path, j,k)
                 except:
                     print(video_path)
-cropreal()
+# cropreal()
+
+dic = [
+'D:\DATA\FF++_Videos/Face2Face\\raw//train\\629_618.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\096_101.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\101_096.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\155_576.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\317_359.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\359_317.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\449_451.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\451_449.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\509_525.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\525_509.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\547_574.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\574_547.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\576_155.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\601_653.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\618_629.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\629_618.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\653_601.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\665_679.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\679_665.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\704_723.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\723_704.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\738_804.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\764_850.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\804_738.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//train\\850_764.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//test\\135_880.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//test\\170_186.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//test\\186_170.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//test\\462_467.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//test\\467_462.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//test\\880_135.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//val\\370_483.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//val\\483_370.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//val\\672_720.mp4',
+# 'D:\DATA\FF++_Videos/FaceSwap\\raw//val\\720_672.mp4'
+]
+
+for ele in dic:
+    crop(ele, 'Face2Face', 'train')
