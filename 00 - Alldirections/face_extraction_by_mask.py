@@ -28,7 +28,7 @@ def crop(video_path,type,split):
         os.makedirs(target_msk_face_path)
 
     gap = 5
-    scale = 1.8
+    scale = 2.6
     i = 0
     while True:
         success_raw = raw_vid.grab()
@@ -97,8 +97,8 @@ def crop(video_path,type,split):
     msk_vid.release()
 
 def cropreal():
-    split = ['train', 'test', 'val']
-    type = ['NeuralTextures']
+    split = ['test', 'val']
+    type = ['Deepfakes']
     for j in type:
         src_ = dst_path + j + r'\\' + 'raw' + '/'
         for k in split:

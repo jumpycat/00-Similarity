@@ -45,7 +45,7 @@ def extract_frames(video_path, targetpath):
                 l, t, r, b = boxes.tolist()
                 h = b - t
                 w = r - l
-                maxl = int(max(h, w) * scale)
+                maxl = int(max(h, w) * 1.7)
                 centerx = (t + b) / 2
                 centery = (l + r) / 2
                 startx = centerx - maxl // 2
@@ -54,10 +54,18 @@ def extract_frames(video_path, targetpath):
                     startx = 0
                 if startx + maxl >= height:
                     startx = height - maxl
+                if startx <= 0 and height - maxl <= 0:
+                    startx = 0
+                    maxl = height
+
                 if starty <= 0:
                     starty = 0
                 if starty + maxl >= width:
                     starty = width - maxl
+                if starty <= 0 and width - maxl <= 0:
+                    starty = 0
+                    maxl = min(height, width)
+
                 startx, starty = int(startx), int(starty)
 
                 raw_face = raw_frame[startx:startx + maxl, starty:starty + maxl, :]
@@ -74,9 +82,7 @@ def extract_frames(video_path, targetpath):
                 cv2.imwrite(targetpath.replace('raw', 'c23') + '/' + str(i) + '.png', c23_face)
                 cv2.imwrite(targetpath.replace('raw', 'c40') + '/' + str(i) + '.png', c40_face)
 
-                # if not os.path.exists(r'D:\DATA\FF++Images\Deepfakes\mask/' + type + '/' + video_path[-11:-4]):
-                #     os.makedirs(r'D:\DATA\FF++Images\Deepfakes\mask/' + type + '/' + video_path[-11:-4])
-                # cv2.imwrite(r'D:\DATA\FF++Images\Deepfakes\mask/' + type + '/' + video_path[-11:-4] + '/' + str(i) + '.png', mask)
+
         i += 1
     raw_vid.release()
     c23_vid.release()
@@ -111,7 +117,7 @@ def cropreal():
     split = ['train', 'test', 'val']
     src = 'D:/DATA/FF++_Videos/Real/raw/'
 
-    dst_path = r'D:\DATA\FF++_Images/'
+    dst_path = r'D:\DATA\reall/'
     for j in split:
         src_ = src + j
         videos = os.listdir(src_)
