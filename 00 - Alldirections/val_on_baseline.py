@@ -18,6 +18,12 @@ LENGTH = 10000
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
+# Deepfakes Face2Face FaceSwap NeuralTextures
+train_fake_root = r'H:\FF++_Images_v2\NeuralTextures\raw\train/'
+val_fake_root = r'H:\FF++_Images_v2\FaceSwap\raw\val/'
+
+net = torch.load(r'trained_models\f2f_resnet18_v2.pkl')
+
 preprocess = transforms.Compose([
     transforms.Resize((256,256)),
     transforms.ToTensor()
@@ -34,7 +40,7 @@ class DealDataset(Dataset):
         self.loader = loader
 
         # Deepfakes Face2Face FaceSwap NeuralTextures
-        fake_root = r'D:\DATA\FF++_Images\Face2Face\raw\train/'
+        fake_root = train_fake_root
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -43,7 +49,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'D:\DATA\FF++_Images\Real_1.8\raw\train/'
+        real_root = r'H:\FF++_Images_v2\Real\raw\train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:
@@ -96,14 +102,14 @@ def train():
             optimizer.step()
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('logs.txt', 'a', encoding='utf-8') as f:
-                f.write(data)
-                f.write('\n')
+            # with open('logs.txt', 'a', encoding='utf-8') as f:
+            #     f.write(data)
+            #     f.write('\n')
         tag = 'epoch-%03d-loss-%.03f' % (epoch + 1, loss.item())
         torch.save(net, 'trained_models/' + tag + '.pkl')
 
 def getValdata(size):
-    real_root = r'D:\DATA\FF++_Images\Real_1.8\raw\val'
+    real_root = r'H:\FF++_Images_v2\Real\raw\val'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -112,7 +118,7 @@ def getValdata(size):
         test_real_imgs.append([video_path + '/' + j for j in img])
 
     #Deepfakes Face2Face FaceSwap NeuralTextures
-    fake_root = r'D:\DATA\FF++_Images\Deepfakes\raw\val'
+    fake_root = val_fake_root
     test_fake_video_paths = os.listdir(fake_root)
     test_fake_imgs = []
     for i in test_fake_video_paths:
@@ -144,7 +150,6 @@ def getValdata(size):
     return torch.stack(imgs, dim=0),labels
 
 def test():
-    net = torch.load(r'trained_models\resnet18-f2f_1.8.pkl')
     prd = []
     lal = []
     for i in range(100):

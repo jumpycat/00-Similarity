@@ -66,8 +66,9 @@ class DealDataset(Dataset):
     def __init__(self, loader=default_loader):
         self.len = LENGTH
         self.loader = loader
+        # Deepfakes Face2Face FaceSwap NeuralTextures
 
-        fake_root = r'D:\DATA\FF++_Images\NeuralTextures\raw\train/'
+        fake_root = r'H:\FF++_Images_v2\NeuralTextures\raw\train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -76,7 +77,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'D:\DATA\FF++_Images\Real\raw\train/'
+        real_root = r'H:\FF++_Images_v2\Real\raw\train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:

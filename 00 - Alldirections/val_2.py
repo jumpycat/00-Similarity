@@ -15,6 +15,9 @@ preprocess = transforms.Compose([
     transforms.ToTensor()
 ])
 
+# Deepfakes Face2Face FaceSwap NeuralTextures
+Fake_root = r'H:\FF++_Images_v2\FaceSwap\raw\val'
+net = torch.load(r'trained_models\fs_v2\epoch-019-loss-0.091.pkl')
 
 def default_loader(path):
     img_pil = Image.open(path)
@@ -44,7 +47,7 @@ def Calsim(x):
 
 
 def getValdata(size):
-    real_root = r'D:\DATA\FF++_Images\Real_by_DF_msk\val'
+    real_root = r'H:\FF++_Images_v2\Real\raw\val'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -52,8 +55,7 @@ def getValdata(size):
         img = os.listdir(video_path)
         test_real_imgs.append([video_path + '/' + j for j in img])
 
-    #Deepfakes Face2Face FaceSwap NeuralTextures
-    fake_root = r'D:\DATA\FF++_Images\Deepfakes\raw\val'
+    fake_root = Fake_root
     test_fake_video_paths = os.listdir(fake_root)
     test_fake_imgs = []
     for i in test_fake_video_paths:
@@ -85,7 +87,6 @@ def getValdata(size):
     return torch.stack(imgs, dim=0),labels
 
 
-net = torch.load(r'trained_models\f2f_1.8\epoch-012-loss-0.048.pkl')
 
 
 def showHist():
@@ -168,15 +169,17 @@ def showHISTandMsk():
 
     findthrehold(ret_hist, ret_labels)
 
-    threhold_acc = np.array(np.array(ret_hist) > 0.876, dtype=int)
+    threhold_acc = np.array(np.array(ret_hist) > 0.907, dtype=int)
     acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
     print('not val:',acc)
 
-
+    # 0.995 / 0.967
+    # 0.9131 / 0.966   0.9119
     plt.hist(ret_hist, bins=100)
     plt.xlabel('mean')
     plt.ylabel('num')
     plt.show()
 
 
-showHISTandMsk()
+if __name__ == '__main__':
+    showHISTandMsk()
