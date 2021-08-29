@@ -44,17 +44,20 @@ def Calsim(x):
 
 
 def getValdata(size):
-    test_real_video_paths = os.listdir(r'D:\DATA\FF++_Images\Real\raw\val')
+    real_root = r'D:\DATA\FF++_Images\Real_by_DF_msk\val'
+    test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
-        video_path = r'D:\DATA\FF++_Images\Real\raw\val/' + i
+        video_path = real_root + '/' + i
         img = os.listdir(video_path)
         test_real_imgs.append([video_path + '/' + j for j in img])
 
-    test_fake_video_paths = os.listdir(r'D:\DATA\FF++_Images\NeuralTextures\raw\val')
+    #Deepfakes Face2Face FaceSwap NeuralTextures
+    fake_root = r'D:\DATA\FF++_Images\Deepfakes\raw\val'
+    test_fake_video_paths = os.listdir(fake_root)
     test_fake_imgs = []
     for i in test_fake_video_paths:
-        video_path = r'D:\DATA\FF++_Images\NeuralTextures\raw\val/' + i
+        video_path = fake_root + '/' + i
         img = os.listdir(video_path)
         test_fake_imgs.append([video_path + '/' + j for j in img])
 
@@ -82,7 +85,7 @@ def getValdata(size):
     return torch.stack(imgs, dim=0),labels
 
 
-net = torch.load(r'trained_models\epoch-012-loss-0.048.pkl')
+net = torch.load(r'trained_models\f2f_1.8\epoch-012-loss-0.048.pkl')
 
 
 def showHist():
@@ -126,7 +129,7 @@ def showMask():
 def calacc():
     ret = 0
     for i in range(10):
-        inputs,labels = getValdata(32)
+        inputs,labels = getValdata(50)
         input = inputs.cuda()
         output1,output2 = net(input)
         outputs = np.array(np.mean(torch.sigmoid(output1.detach().cpu()).numpy(),axis=(1,2,3))>0.9,dtype=int)
@@ -135,4 +138,45 @@ def calacc():
         # outputs = list(np.mean(output1.detach().cpu().numpy(),axis=(1,2,3)))
     print(ret/320)
 
-showMask()
+def findthrehold(pred,label):
+    best_acc = 0
+    for th in [0.8 + mom/1000 for mom in range(200)]:
+        threhold_acc = np.array(np.array(pred)>th,dtype=int)
+        acc = np.sum(threhold_acc == np.array(label))/3200
+        if acc > best_acc:
+            best_acc = acc
+            print(th,best_acc)
+
+def showHISTandMsk():
+    ret_hist = []
+    ret_labels = []
+    for i in range(100):
+        inputs, label = getValdata(32)
+        input = inputs.cuda()
+        output1, output2 = net(input)
+
+        up = torch.sigmoid(output1).detach().cpu().numpy()[:,:,:-1,1:15]
+        down = torch.sigmoid(output1).detach().cpu().numpy()[:,:,1:,1:15]
+        left = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,:-1]
+        right = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,1:]
+
+        sim_map = np.mean(np.concatenate((up, down, left, right), axis=1),axis=(1,2,3))
+        batch_sim_map_avg = list(sim_map)
+
+        ret_hist += batch_sim_map_avg
+        ret_labels += label
+
+    findthrehold(ret_hist, ret_labels)
+
+    threhold_acc = np.array(np.array(ret_hist) > 0.876, dtype=int)
+    acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
+    print('not val:',acc)
+
+
+    plt.hist(ret_hist, bins=100)
+    plt.xlabel('mean')
+    plt.ylabel('num')
+    plt.show()
+
+
+showHISTandMsk()

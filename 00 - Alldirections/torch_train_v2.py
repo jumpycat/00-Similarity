@@ -67,7 +67,7 @@ class DealDataset(Dataset):
         self.len = LENGTH
         self.loader = loader
 
-        fake_root = r'D:\DATA\FF++_Images\Deepfakes\raw\train/'
+        fake_root = r'D:\DATA\FF++_Images\NeuralTextures\raw\train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []

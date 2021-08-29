@@ -114,10 +114,11 @@ def cropfake():
 
 
 def cropreal():
-    split = ['train', 'test', 'val']
+    split = ['val']
     src = 'D:/DATA/FF++_Videos/Real/raw/'
 
     dst_path = r'D:\DATA\reall/'
+    index = 0
     for j in split:
         src_ = src + j
         videos = os.listdir(src_)
@@ -129,11 +130,15 @@ def cropreal():
             dst_imgs_path = dst_path + dst_
             if not os.path.exists(dst_imgs_path):
                 os.makedirs(dst_imgs_path)
+            if index > 122:
+                try:
+                    extract_frames(video_path, dst_imgs_path)
+                except:
+                    print(video_path, dst_imgs_path)
+            else:
+                index += 1
+                print(1)
 
-            try:
-                extract_frames(video_path, dst_imgs_path)
-            except:
-                print(video_path, dst_imgs_path)
 
 
 cropreal()

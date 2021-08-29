@@ -12,7 +12,10 @@
 
 import os
 import cv2
-import numpy as np
+# import numpy as np
+#
+# a = np.ones((7,3))
+# print(np.mean(a,axis=0))
+import torch
 
-a = np.ones((7,3))
-print(np.mean(a,axis=0))
+print(torch.tensor([0]))
