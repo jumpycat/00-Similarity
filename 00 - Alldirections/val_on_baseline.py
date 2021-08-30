@@ -8,7 +8,7 @@ import os
 from PIL import Image
 import torchvision
 
-EPOCH = 30
+EPOCH = 10
 BATCH_SIZE = 64
 LR = 0.01
 SIZE = 256
@@ -19,10 +19,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
-train_fake_root = r'H:\FF++_Images_v2\NeuralTextures\raw\train/'
-val_fake_root = r'H:\FF++_Images_v2\FaceSwap\raw\val/'
+train_fake_root = r'H:\FF++_Images_v2\Face2Face\raw\train/'
 
-net = torch.load(r'trained_models\f2f_resnet18_v2.pkl')
+val_fake_root = r'H:\FF++_Images_v2\Face2Face\raw\val/'
+net = torch.load(r'trained_models\v2\fs-resnet18_v2.pkl')
+net.eval()
 
 preprocess = transforms.Compose([
     transforms.Resize((256,256)),
@@ -79,8 +80,9 @@ class DealDataset(Dataset):
         return self.len
 
 def train():
-    net = torchvision.models.resnet18(pretrained=True)
-    net.fc = nn.Linear(512, 1)
+    # net = torchvision.models.resnet18(pretrained=True)
+    # net.fc = nn.Linear(512, 1)
+    net = torch.load(r'trained_models\epoch-002-loss-0.006.pkl')
 
     net.to(device)
     dealDataset = DealDataset()
@@ -108,7 +110,8 @@ def train():
         tag = 'epoch-%03d-loss-%.03f' % (epoch + 1, loss.item())
         torch.save(net, 'trained_models/' + tag + '.pkl')
 
-def getValdata(size):
+
+def test():
     real_root = r'H:\FF++_Images_v2\Real\raw\val'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
@@ -117,7 +120,7 @@ def getValdata(size):
         img = os.listdir(video_path)
         test_real_imgs.append([video_path + '/' + j for j in img])
 
-    #Deepfakes Face2Face FaceSwap NeuralTextures
+    # Deepfakes Face2Face FaceSwap NeuralTextures
     fake_root = val_fake_root
     test_fake_video_paths = os.listdir(fake_root)
     test_fake_imgs = []
@@ -129,37 +132,38 @@ def getValdata(size):
     NUM_fake = len(test_fake_imgs)
     NUM_real = len(test_real_imgs)
 
-    imgs = []
-    labels = []
-    for i in range(size):
-        if np.random.randint(0, 2):
-            video_index = np.random.randint(0, NUM_fake)
-            img_index = np.random.randint(0, len(test_fake_imgs[video_index]))
-            img_path = test_fake_imgs[video_index][img_index]
-            img = default_loader(img_path)
-            imgs.append(img)
-            labels.append(0)
-        else:
-            video_index = np.random.randint(0, NUM_real)
-            img_index = np.random.randint(0, len(test_real_imgs[video_index]))
-            img_path = test_real_imgs[video_index][img_index]
-            img = default_loader(img_path)
-            imgs.append(img)
-            labels.append(1)
+    def getValdata(size):
+        imgs = []
+        labels = []
+        for cc in range(size):
+            if np.random.randint(0, 2):
+                video_index = np.random.randint(0, NUM_fake)
+                img_index = np.random.randint(0, len(test_fake_imgs[video_index]))
+                img_path = test_fake_imgs[video_index][img_index]
+                img_fake = default_loader(img_path)
+                imgs.append(img_fake)
+                labels.append(0)
+            else:
+                video_index = np.random.randint(0, NUM_real)
+                img_index = np.random.randint(0, len(test_real_imgs[video_index]))
+                img_path = test_real_imgs[video_index][img_index]
+                img_real = default_loader(img_path)
+                imgs.append(img_real)
+                labels.append(1)
+        # print(labels)
+        return torch.stack(imgs, dim=0), labels
 
-    return torch.stack(imgs, dim=0),labels
-
-def test():
     prd = []
     lal = []
-    for i in range(100):
+    for kk in range(100):
         inputs, label = getValdata(32)
         input = inputs.cuda()
-        output = net(input)
+        output = torch.sigmoid(net(input))
         prd += list(output.detach().cpu().numpy())
         lal += label
-    prd = np.array(prd)>0.5
-    acc = np.sum(prd==np.expand_dims(np.array(lal),axis=1))/3200
+
+    prd = np.squeeze(np.array(prd)>0.5)
+    acc = np.sum(prd==(np.array(lal)))/3200
     print(acc)
 
 if __name__ == '__main__':

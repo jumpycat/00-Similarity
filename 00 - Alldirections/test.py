@@ -16,6 +16,11 @@ import cv2
 #
 # a = np.ones((7,3))
 # print(np.mean(a,axis=0))
-import torch
-
-print(torch.tensor([0]))
+# import torch
+#
+# print(torch.tensor([0]))
+import numpy as np
+total = 0
+for i in range(100):
+    if np.random.randint(0, 100):
+        print(1)

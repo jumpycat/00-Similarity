@@ -16,7 +16,8 @@ preprocess = transforms.Compose([
 ])
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
-Fake_root = r'H:\FF++_Images_v2\FaceSwap\raw\val'
+
+Fake_root = r'I:\FF++_Images_v2\NeuralTextures\raw\val'
 net = torch.load(r'trained_models\v2\nt_v2\epoch-026-loss-0.058.pkl')
 net.eval()
 
@@ -46,40 +47,19 @@ def Calsim(x):
             ret[i, j] = up
     return ret
 
-# def showMask():
-#     inputs,label = getValdata(32)
-#     input = inputs.cuda()
-#     output1, output2 = net(input)
-#
-#     up = torch.sigmoid(output1).detach().cpu().numpy()[:,:,:-1,1:15]
-#     down = torch.sigmoid(output1).detach().cpu().numpy()[:,:,1:,1:15]
-#     left = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,:-1]
-#     right = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,1:]
-#
-#     inputs = inputs.numpy()
-#
-#     sim_map = np.mean(np.concatenate((up,down,left,right),axis=1),axis=1)
-#     print(sim_map.shape)
-#     for i in range(16):
-#         plt.subplot(4, 8, i + 1 + 8*(i//8))
-#         plt.imshow(sim_map[i]<0.5, cmap='gray')
-#         plt.xlabel(label[i])
-#         plt.subplot(4, 8, i + 1 + 8*(i//8+1))
-#         plt.imshow(np.transpose(inputs[i], (1, 2, 0)))
-#     plt.show()
-
-
 def findthrehold(pred,label):
     best_acc = 0
+    best_th = 0
     for th in [0.8 + mom/1000 for mom in range(200)]:
         threhold_acc = np.array(np.array(pred)>th,dtype=int)
         acc = np.sum(threhold_acc == np.array(label))/3200
         if acc > best_acc:
             best_acc = acc
-            print(th,best_acc)
+            best_th = th
+    print('Threshold:',best_th,'Accuracy:',best_acc)
 
 def showHISTandMsk():
-    real_root = r'H:\FF++_Images_v2\Real\raw\val'
+    real_root = r'I:\FF++_Images_v2\Real\raw\val'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -139,17 +119,37 @@ def showHISTandMsk():
 
     findthrehold(ret_hist, ret_labels)
 
-    threhold_acc = np.array(np.array(ret_hist) > 0.913, dtype=int)
-    acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
-    print('not val:',acc)
+    # threhold_acc = np.array(np.array(ret_hist) > 0.913, dtype=int)
+    # acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
+    # print('acc:',acc)
+    return ret_labels,ret_hist
 
-    # 0.995 / 0.967
-    # 0.9131 / 0.966   0.9119
-    plt.hist(ret_hist, bins=100)
-    plt.xlabel('mean')
-    plt.ylabel('num')
-    plt.show()
-
+def calcAUC_byProb(labels, probs):
+    N = 0
+    P = 0
+    neg_prob = []
+    pos_prob = []
+    for _,i in enumerate(labels):
+        if (i == 1):
+            P += 1
+            pos_prob.append(probs[_])
+        else:
+            N += 1
+            neg_prob.append(probs[_])
+    number = 0
+    for pos in pos_prob:
+        for neg in neg_prob:
+            if (pos > neg):
+                number += 1
+            elif (pos == neg):
+                number += 0.5
+    return number / (N * P)
 
 if __name__ == '__main__':
-    showHISTandMsk()
+    auc = calcAUC_byProb(showHISTandMsk()[0],showHISTandMsk()[1])
+    print(auc)
+
+
+
+
+
