@@ -17,8 +17,8 @@ preprocess = transforms.Compose([
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
 
-Fake_root = r'I:\FF++_Images_v2\NeuralTextures\raw\val'
-net = torch.load(r'trained_models\v2\f2f_v2\epoch-016-loss-0.063.pkl')
+Fake_root = r'I:\Celeb-DF_Images\Celeb-synthesis\train'
+net = torch.load(r'trained_models\v2\df_v2\epoch-018-loss-0.053.pkl')
 net.eval()
 
 def default_loader(path):
@@ -59,7 +59,7 @@ def findthrehold(pred,label):
     print('Threshold:',best_th,'Accuracy:',best_acc)
 
 def showHISTandMsk():
-    real_root = r'I:\FF++_Images_v2\Real\raw\val'
+    real_root = r'I:\Celeb-DF_Images\Celeb-real\train'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -119,9 +119,9 @@ def showHISTandMsk():
 
     findthrehold(ret_hist, ret_labels)
 
-    threhold_acc = np.array(np.array(ret_hist) > 0.878, dtype=int)
-    acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
-    print('acc:',acc)
+    # threhold_acc = np.array(np.array(ret_hist) > 0.878, dtype=int)
+    # acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
+    # print('acc:',acc)
     return ret_labels,ret_hist
 
 def calcAUC_byProb(labels, probs):

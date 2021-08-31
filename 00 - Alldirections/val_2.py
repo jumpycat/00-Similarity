@@ -16,7 +16,7 @@ preprocess = transforms.Compose([
 ])
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
-Fake_root = r'H:\FF++_Images_v2\FaceSwap\raw\val'
+Fake_root = r'I:\Celeb-DF_Images\Celeb-synthesis\train'
 net = torch.load(r'trained_models\v2\nt_v2\epoch-026-loss-0.058.pkl')
 net.eval()
 
@@ -79,7 +79,7 @@ def findthrehold(pred,label):
             print(th,best_acc)
 
 def showHISTandMsk():
-    real_root = r'H:\FF++_Images_v2\Real\raw\val'
+    real_root = r'I:\Celeb-DF_Images\Celeb-real\train'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -102,7 +102,7 @@ def showHISTandMsk():
         imgs = []
         labels = []
         for i in range(size):
-            if np.random.randint(0, 2):
+            if np.random.randint(1, 2):
                 video_index = np.random.randint(0, NUM_fake)
                 img_index = np.random.randint(0, len(test_fake_imgs[video_index]))
                 img_path = test_fake_imgs[video_index][img_index]
