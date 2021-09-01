@@ -18,7 +18,7 @@ preprocess = transforms.Compose([
 # Deepfakes Face2Face FaceSwap NeuralTextures
 
 Fake_root = r'I:\Celeb-DF_Images\Celeb-synthesis\train'
-net = torch.load(r'trained_models\v2\df_v2\epoch-018-loss-0.053.pkl')
+net = torch.load(r'trained_models\epoch-030-loss-0.113.pkl')
 net.eval()
 
 def default_loader(path):

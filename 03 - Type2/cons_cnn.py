@@ -5,8 +5,6 @@ import os, torch, random
 class MISLnet(nn.Module):
     def __init__(self):
         super(MISLnet, self).__init__()
-
-        self.register_parameter("const_weight", None)
         self.const_weight = nn.Parameter(torch.randn(size=[3, 1, 5, 5]), requires_grad=True)
         # self.conv1 = nn.Conv2d(3, 96, 7, stride=2, padding=4)
         # self.conv2 = nn.Conv2d(96, 64, 5, stride=1, padding=2)

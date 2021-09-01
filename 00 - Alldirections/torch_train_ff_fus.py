@@ -144,15 +144,16 @@ class DealDataset(Dataset):
 
 
 
-net = resnet18()
-pretext_model = torch.load(r'C:\Users\jumpycat\.cache\torch\checkpoints/resnet18-5c106cde.pth')
-model2_dict = net.state_dict()
-state_dict = {k: v for k, v in pretext_model.items() if k in model2_dict.keys()}
-state_dict.pop('fc.weight')
-state_dict.pop('fc.bias')
-model2_dict.update(state_dict)
-net.load_state_dict(model2_dict)
+# net = resnet18()
+# pretext_model = torch.load(r'C:\Users\jumpycat\.cache\torch\checkpoints/resnet18-5c106cde.pth')
+# model2_dict = net.state_dict()
+# state_dict = {k: v for k, v in pretext_model.items() if k in model2_dict.keys()}
+# state_dict.pop('fc.weight')
+# state_dict.pop('fc.bias')
+# model2_dict.update(state_dict)
+# net.load_state_dict(model2_dict)
 
+net = torch.load('epoch-030-loss-0.113.pkl')
 net.to(device)
 dealDataset = DealDataset()
 train_loader = DataLoader(dataset=dealDataset, batch_size=BATCH_SIZE, shuffle=True)
