@@ -16,8 +16,8 @@ preprocess = transforms.Compose([
 ])
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
-Fake_root = r'I:\Celeb-DF_Images\Celeb-synthesis\train'
-net = torch.load(r'trained_models\epoch-030-loss-0.113.pkl')
+Fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceShifter\raw\val'
+net = torch.load(r'trained_models\v2\df_v2\epoch-018-loss-0.053.pkl')
 net.eval()
 
 def default_loader(path):
@@ -79,7 +79,7 @@ def findthrehold(pred,label):
             print(th,best_acc)
 
 def showHISTandMsk():
-    real_root = r'I:\Celeb-DF_Images\Celeb-real\train'
+    real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\raw\val'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -139,7 +139,7 @@ def showHISTandMsk():
 
     findthrehold(ret_hist, ret_labels)
 
-    threhold_acc = np.array(np.array(ret_hist) > 0.913, dtype=int)
+    threhold_acc = np.array(np.array(ret_hist) > 0.970, dtype=int)
     acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
     print('not val:',acc)
 

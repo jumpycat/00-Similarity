@@ -3,14 +3,13 @@ import cv2
 import numpy as np
 
 
-target_root = r'I:\FF++_Images_v2\FaceShifter/'
-dst_path = r'I:\FF++_Videos/'
+target_root = r'I:\01-Dataset\01-Images\00-FF++\FaceShifter2.0/'
 
 def crop(faces_vid_path):
     #'Face2Face','FaceSwap','NeuralTextures','Real'
 
-    df_mask_path = r'I:\FF++_Videos\Deepfakes\mask/'
-    real_path = r'I:\FF++_Videos\Real\raw/'
+    df_mask_path = r'I:\01-Dataset\00-Videos\00-FF++\Deepfakes\mask/'
+    real_path = r'I:\01-Dataset\00-Videos\00-FF++\Real\raw/'
 
 
     df_mask_paths = [df_mask_path + m for m in os.listdir(df_mask_path)]
@@ -54,7 +53,7 @@ def crop(faces_vid_path):
         os.makedirs(target_msk_face_path)
 
     gap = 5
-    scale = 2.6
+    scale = 3.4
     i = 0
     while True:
         success_df = faces_vid.grab()
@@ -126,7 +125,7 @@ def cropall():
     split = ['train','val','test']
 
 
-    faceshifter = r'I:\FF++_Videos\FaceShifter\raw\videos/'
+    faceshifter = r'I:\01-Dataset\00-Videos\00-FF++\FaceShifter\raw\videos/'
 
     faces_vid = os.listdir(faceshifter)
     for m in faces_vid:

@@ -1,12 +1,33 @@
 import torch, torch.nn as nn, torch.nn.functional as F, random
 import os, torch, random
+from test import init
+
+class LHPF(nn.Module):
+    def __init__(self):
+        super(LHPF, self).__init__()
+        self.weight = nn.Parameter(torch.Tensor(self.in_features))
+        self.register_parameter('bias', None)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        central_pixel = (self.weight.data[:, 0, 2, 2])
+        for i in range(3):
+            sumed = self.weight.data[i].sum() - central_pixel[i]
+            self.weight.data[i] /= sumed
+            self.weight.data[i, 0, 2, 2] = -1.0
+
+    def forward(self, x):
+        x = F.conv2d(x, self.weight)
+        return x
+
+
 
 
 class MISLnet(nn.Module):
     def __init__(self):
         super(MISLnet, self).__init__()
         self.const_weight = nn.Parameter(torch.randn(size=[3, 1, 5, 5]), requires_grad=True)
-        # self.conv1 = nn.Conv2d(3, 96, 7, stride=2, padding=4)
+        self.conv1 = nn.Conv2d(3, 96, 7, stride=2, padding=4)
         # self.conv2 = nn.Conv2d(96, 64, 5, stride=1, padding=2)
         # self.conv3 = nn.Conv2d(64, 64, 5, stride=1, padding=2)
         # self.conv4 = nn.Conv2d(64, 128, 1, stride=1)

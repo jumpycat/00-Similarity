@@ -17,9 +17,10 @@ preprocess = transforms.Compose([
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
 
-Fake_root = r'I:\Celeb-DF_Images\Celeb-synthesis\train'
-net = torch.load(r'trained_models\epoch-030-loss-0.113.pkl')
+Fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceShifter2.0\raw\val'
+net = torch.load(r'trained_models\v2\nt_v2\epoch-026-loss-0.058.pkl')
 net.eval()
+TH = 0.913
 
 def default_loader(path):
     img_pil = Image.open(path)
@@ -56,10 +57,11 @@ def findthrehold(pred,label):
         if acc > best_acc:
             best_acc = acc
             best_th = th
-    print('Threshold:',best_th,'Accuracy:',best_acc)
+            print('Threshold:', best_th, 'Accuracy:', best_acc)
+    # print('Threshold:',best_th,'Accuracy:',best_acc)
 
 def showHISTandMsk():
-    real_root = r'I:\Celeb-DF_Images\Celeb-real\train'
+    real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\raw\val'
     test_real_video_paths = os.listdir(real_root)
     test_real_imgs = []
     for i in test_real_video_paths:
@@ -119,9 +121,15 @@ def showHISTandMsk():
 
     findthrehold(ret_hist, ret_labels)
 
-    # threhold_acc = np.array(np.array(ret_hist) > 0.878, dtype=int)
-    # acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
-    # print('acc:',acc)
+    threhold_acc = np.array(np.array(ret_hist) > TH, dtype=int)
+    acc = np.sum(threhold_acc == np.array(ret_labels)) / 3200
+    print('acc:',acc)
+
+    plt.hist(ret_hist, bins=100)
+    plt.xlabel('mean')
+    plt.ylabel('num')
+    plt.show()
+
     return ret_labels,ret_hist
 
 def calcAUC_byProb(labels, probs):
