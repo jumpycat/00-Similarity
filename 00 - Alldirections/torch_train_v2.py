@@ -11,7 +11,7 @@ from resmodel import resnet18
 from numpy.lib.stride_tricks import as_strided
 
 AVG_SIZE = 2  #特征图池化降采样
-EPOCH = 30
+EPOCH = 100
 BATCH_SIZE = 64
 LR = 0.01
 SIZE = 256
@@ -48,7 +48,7 @@ def Calsimup(x):
     ret = np.ones((m-1, n))
     for i in range(m-1):
         for j in range(n):
-            if abs(x[i+1, j] - x[i, j]) > 0:
+            if abs(x[i+1, j] - x[i, j]) > 0.1:
                 ret[i,j] = 0
     return ret
 
@@ -57,7 +57,7 @@ def Calsimleft(x):
     ret = np.ones((m, n-1))
     for i in range(m):
         for j in range(n-1):
-            if abs(x[i, j+1] - x[i, j]) > 0:
+            if abs(x[i, j+1] - x[i, j]) > 0.1:
                 ret[i,j] = 0
     return ret
 
@@ -68,7 +68,7 @@ class DealDataset(Dataset):
         self.loader = loader
         # Deepfakes Face2Face FaceSwap NeuralTextures
 
-        fake_root = r'I:\01-Dataset\01-Images\00-FF++\NeuralTextures\c40\train/'
+        fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceSwap\raw\train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -77,7 +77,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\c40\train/'
+        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\raw\train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:
@@ -128,7 +128,7 @@ def findthrehold(pred,label):
     best_th = 0
     for th in [0.8 + mom/1000 for mom in range(200)]:
         threhold_acc = np.array(np.array(pred)>th,dtype=int)
-        acc = np.sum(threhold_acc == np.array(label))/3200
+        acc = np.sum(threhold_acc == np.array(label))/2000
         if acc > best_acc:
             best_acc = acc
             best_th = th
@@ -160,7 +160,7 @@ def val(model):
     model.eval()
     ret_hist = []
     ret_labels = []
-    for i in range(40):
+    for i in range(80):
         inputs, label = getValdata(25)
         input = inputs.cuda()
         output1, output2 = model(input)
@@ -187,7 +187,8 @@ for i in test_real_video_paths:
     img = os.listdir(video_path)
     test_real_imgs.append([video_path + '/' + j for j in img])
 
-fake_root = r'I:\01-Dataset\01-Images\00-FF++\NeuralTextures\c40\val/'
+# Deepfakes Face2Face FaceSwap NeuralTextures
+fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceSwap\raw\val/'
 test_fake_video_paths = os.listdir(fake_root)
 test_fake_imgs = []
 for i in test_fake_video_paths:
@@ -234,7 +235,7 @@ if __name__ == '__main__':
 
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('logs-c40-nt.txt', 'a', encoding='utf-8') as f:
+            with open('logs-raw-fs-gt_th0.9.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
 
@@ -243,4 +244,4 @@ if __name__ == '__main__':
 
         tag = 'epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1,loss.item(),best_acc,best_th)
         print(tag)
-        torch.save(net, r'trained_models\v2\c40-nt/'+tag + '.pkl')
+        torch.save(net, r'trained_models\v2\raw-fs-gt_th0.9/'+tag + '.pkl')

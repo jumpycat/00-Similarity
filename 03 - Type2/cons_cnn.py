@@ -40,7 +40,7 @@ class MISLnet(nn.Module):
         self.base.fc = nn.Linear(512, 1)
 
     def forward(self, x):
-        # x = self.LHPF(x)
+        x = self.LHPF(x)
         x = self.base(x)
         return x
 
@@ -56,10 +56,10 @@ def default_loader(path):
 
 class DealDataset(Dataset):
     def __init__(self, loader=default_loader):
-        self.len = 2700
+        self.len = 3200
         self.loader = loader
         # Deepfakes Face2Face FaceSwap NeuralTextures
-        fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceShifter\raw\train/'
+        fake_root = r'I:\01-Dataset\01-Images\00-FF++\NeuralTextures\c40\train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -68,7 +68,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\raw\train/'
+        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\c40\train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:
@@ -85,7 +85,6 @@ class DealDataset(Dataset):
             img_path = self.train_fake_imgs[video_index][img_index]
             img = self.loader(img_path)
             label = torch.tensor((0,))
-
 
         else:
             video_index = np.random.randint(0, self.NUM_real)
@@ -119,16 +118,16 @@ def train():
             loss.backward()
             optimizer.step()
 
-            th_acc = np.array(np.array(output.detach().cpu().numpy()) > 0.5, dtype=int)
+            th_acc = np.array(np.array(torch.sigmoid(output).detach().cpu().numpy()) > 0.5, dtype=int)
             acc = np.sum(th_acc == np.array(labels)) / 64
 
             data = '[epoch:%03d, iter:%03d] Loss: %.03f Acc: %.03f' % (epoch + 1, i, loss.item(), acc)
             print(data)
-            with open('logs-resnet18.txt', 'a', encoding='utf-8') as f:
+            with open('logs-nt-c40-lsrm2.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
         tag = 'epoch-%03d-loss-%.03f-Acc-%.03f' % (epoch + 1, loss.item(), acc)
-        torch.save(net, 'models/' + tag + '.pkl')
+        torch.save(net, 'models/nt-c40-lsrm/' + tag + '.pkl')
 
 if __name__ == "__main__":
     # net = torch.load('models/epoch-002-loss-0.009-Acc-0.750.pkl')
