@@ -21,11 +21,11 @@ def crop(video_path,type,split):
     fs_msk_vid = cv2.VideoCapture(dst_path + '/' + 'FaceSwap' + '/' + 'mask' + '/' + file_name + '.mp4')
     nt_msk_vid = cv2.VideoCapture(dst_path + '/' + 'NeuralTextures' + '/' + 'mask' + '/' + file_name + '.mp4')
 
-    target_df_face_path = target_root + '/' + type + '/' + 'c40' + '/' + split + '/' + file_name
-    target_f2f_face_path = target_root + '/' + 'Face2Face' + '/' + 'c40' + '/' + split + '/' + file_name
-    target_fs_face_path = target_root + '/' + 'FaceSwap' + '/' + 'c40' + '/' + split + '/' + file_name
-    target_nt_face_path = target_root + '/' + 'NeuralTextures' + '/' + 'c40' + '/' + split + '/' + file_name
-    target_rel_face_path = target_root + '/' + 'Real' + '/' + 'c40' + '/' + split + '/' + file_name[:3]
+    target_df_face_path = target_root + '/' + type + '/' + 'c23' + '/' + split + '/' + file_name
+    target_f2f_face_path = target_root + '/' + 'Face2Face' + '/' + 'c23' + '/' + split + '/' + file_name
+    target_fs_face_path = target_root + '/' + 'FaceSwap' + '/' + 'c23' + '/' + split + '/' + file_name
+    target_nt_face_path = target_root + '/' + 'NeuralTextures' + '/' + 'c23' + '/' + split + '/' + file_name
+    target_rel_face_path = target_root + '/' + 'Real' + '/' + 'c23' + '/' + split + '/' + file_name[:3]
 
     target_df_msk_path = target_root + '/' + type + '/' + 'mask' + '/' + split + '/' + file_name
     target_f2f_msk_path = target_root + '/' + 'Face2Face' + '/' + 'mask' + '/' + split + '/' + file_name
@@ -167,7 +167,7 @@ def cropall():
     split = ['train','val','test']
     type = ['Deepfakes']
     for j in type:
-        src_ = dst_path + j + r'\\' + 'c40' + '/'
+        src_ = dst_path + j + r'\\' + 'c23' + '/'
         for k in split:
             src__ = src_ + '/' + k
             videos = os.listdir(src__)

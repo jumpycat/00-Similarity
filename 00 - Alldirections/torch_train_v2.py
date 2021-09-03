@@ -68,7 +68,7 @@ class DealDataset(Dataset):
         self.loader = loader
         # Deepfakes Face2Face FaceSwap NeuralTextures
 
-        fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceShifter\raw\val/'
+        fake_root = r'I:\01-Dataset\01-Images\00-FF++\NeuralTextures\c40\train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -77,7 +77,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\raw\val/'
+        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\c40\train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:
@@ -94,7 +94,7 @@ class DealDataset(Dataset):
             img_path = self.train_fake_imgs[video_index][img_index]
             img = self.loader(img_path)
 
-            mask_path = img_path.replace('raw','mask')
+            mask_path = img_path.replace('c40','mask')
 
             fake_mask = cv2.imread(mask_path, 0)
             fake_mask = np.array(cv2.resize(fake_mask, (SIZE, SIZE)) > 1, dtype=np.float64)
@@ -121,6 +121,82 @@ class DealDataset(Dataset):
 
     def __len__(self):
         return self.len
+
+
+def findthrehold(pred,label):
+    best_acc = 0
+    best_th = 0
+    for th in [0.8 + mom/1000 for mom in range(200)]:
+        threhold_acc = np.array(np.array(pred)>th,dtype=int)
+        acc = np.sum(threhold_acc == np.array(label))/3200
+        if acc > best_acc:
+            best_acc = acc
+            best_th = th
+    return best_acc,best_th
+
+
+def getValdata(size):
+    imgs = []
+    labels = []
+    for i in range(size):
+        if np.random.randint(0, 2):
+            video_index = np.random.randint(0, NUM_fake)
+            img_index = np.random.randint(0, len(test_fake_imgs[video_index]))
+            img_path = test_fake_imgs[video_index][img_index]
+            img = default_loader(img_path)
+            imgs.append(img)
+            labels.append(0)
+        else:
+            video_index = np.random.randint(0, NUM_real)
+            img_index = np.random.randint(0, len(test_real_imgs[video_index]))
+            img_path = test_real_imgs[video_index][img_index]
+            img = default_loader(img_path)
+            imgs.append(img)
+            labels.append(1)
+
+    return torch.stack(imgs, dim=0), labels
+
+def val(model):
+    model.eval()
+    ret_hist = []
+    ret_labels = []
+    for i in range(40):
+        inputs, label = getValdata(25)
+        input = inputs.cuda()
+        output1, output2 = model(input)
+
+        up = torch.sigmoid(output1).detach().cpu().numpy()[:,:,:-1,1:15]
+        down = torch.sigmoid(output1).detach().cpu().numpy()[:,:,1:,1:15]
+        left = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,:-1]
+        right = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,1:]
+
+        sim_map = np.mean(np.concatenate((up, down, left, right), axis=1),axis=(1,2,3))
+        batch_sim_map_avg = list(sim_map)
+
+        ret_hist += batch_sim_map_avg
+        ret_labels += label
+
+    best_acc,best_th = findthrehold(ret_hist, ret_labels)
+    return best_acc,best_th
+
+real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\raw\val'
+test_real_video_paths = os.listdir(real_root)
+test_real_imgs = []
+for i in test_real_video_paths:
+    video_path = real_root + '/' + i
+    img = os.listdir(video_path)
+    test_real_imgs.append([video_path + '/' + j for j in img])
+
+fake_root = r'I:\01-Dataset\01-Images\00-FF++\NeuralTextures\c40\val/'
+test_fake_video_paths = os.listdir(fake_root)
+test_fake_imgs = []
+for i in test_fake_video_paths:
+    video_path = fake_root + '/' + i
+    img = os.listdir(video_path)
+    test_fake_imgs.append([video_path + '/' + j for j in img])
+
+NUM_fake = len(test_fake_imgs)
+NUM_real = len(test_real_imgs)
 
 
 
@@ -154,10 +230,17 @@ if __name__ == '__main__':
             loss = loss1 + loss2
             loss.backward()
             optimizer.step()
+
+
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('logs.txt', 'a', encoding='utf-8') as f:
+            with open('logs-c40-nt.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
-        tag = 'epoch-%03d-loss-%.03f' % (epoch + 1,loss.item())
-        torch.save(net, 'trained_models/'+tag + '.pkl')
+
+        best_acc,best_th = val(net)
+
+
+        tag = 'epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1,loss.item(),best_acc,best_th)
+        print(tag)
+        torch.save(net, r'trained_models\v2\c40-nt/'+tag + '.pkl')
