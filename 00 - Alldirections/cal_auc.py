@@ -17,10 +17,10 @@ preprocess = transforms.Compose([
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
 
-Fake_root = r'I:\01-Dataset\01-Images\00-FF++\FaceShifter2.0\raw\val'
-net = torch.load(r'trained_models\v2\nt_v2\epoch-026-loss-0.058.pkl')
+Fake_root = r'I:\01-Dataset\01-Images\00-FF++\Deepfakes\raw\val'
+net = torch.load(r'trained_models\v2\raw-fs-gt_th0.9\epoch-007-loss-0.124-ValAcc-0.994-Threshold-0.933.pkl')
 net.eval()
-TH = 0.913
+TH = 0.932
 
 def default_loader(path):
     img_pil = Image.open(path)

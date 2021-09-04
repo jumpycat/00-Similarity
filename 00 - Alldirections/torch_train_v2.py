@@ -18,6 +18,8 @@ SIZE = 256
 LENGTH = 10000
 
 
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
@@ -94,7 +96,7 @@ class DealDataset(Dataset):
             img_path = self.train_fake_imgs[video_index][img_index]
             img = self.loader(img_path)
 
-            mask_path = img_path.replace('c40','mask')
+            mask_path = img_path.replace('raw','mask')
 
             fake_mask = cv2.imread(mask_path, 0)
             fake_mask = np.array(cv2.resize(fake_mask, (SIZE, SIZE)) > 1, dtype=np.float64)
