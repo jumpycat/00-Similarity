@@ -203,6 +203,7 @@ NUM_real = len(test_real_imgs)
 
 
 
+
 net = resnet18()
 pretext_model = torch.load(r'C:\Users\jumpycat\.cache\torch\checkpoints/resnet18-5c106cde.pth')
 model2_dict = net.state_dict()
