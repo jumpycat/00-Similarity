@@ -69,6 +69,9 @@ init = torch.tensor([
 ])
 
 init.cuda(device)
+init = torch.transpose(init,0,1)
 if __name__ == '__main__':
-    print(init[0][2][3][3])
-    print(init[1][2][3][3])
+    print(init.shape)
+    #
+    print(init[0][2][0][2])
+    print(init[0][1][0][2])
