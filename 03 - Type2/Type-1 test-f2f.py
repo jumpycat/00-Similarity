@@ -1,3 +1,4 @@
+from efficientnet_pytorch import EfficientNet
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,26 +8,22 @@ import numpy as np
 import os
 import cv2
 from PIL import Image
-from resmodel import resnet18
 from numpy.lib.stride_tricks import as_strided
 
-AVG_SIZE = 2  #特征图池化降采样
 EPOCH = 100
 BATCH_SIZE = 64
 LR = 0.01
 SIZE = 256
-LENGTH = 10000
-
-
-
+LENGTH = 64 * 200
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 preprocess = transforms.Compose([
-    transforms.Resize((256,256)),
+    transforms.Resize((SIZE, SIZE)),
     transforms.ToTensor()
 ])
+
 
 def default_loader(path):
     img_pil = Image.open(path)
@@ -47,20 +44,21 @@ def pool2d(A, kernel_size, stride):
 
 def Calsimup(x):
     m, n = x.shape[0], x.shape[1]
-    ret = np.ones((m-1, n))
-    for i in range(m-1):
+    ret = np.ones((m - 1, n))
+    for i in range(m - 1):
         for j in range(n):
-            if abs(x[i+1, j] - x[i, j]) > 0:
-                ret[i,j] = 0
+            if abs(x[i + 1, j] - x[i, j]) > 0:
+                ret[i, j] = 0
     return ret
+
 
 def Calsimleft(x):
     m, n = x.shape[0], x.shape[1]
-    ret = np.ones((m, n-1))
+    ret = np.ones((m, n - 1))
     for i in range(m):
-        for j in range(n-1):
-            if abs(x[i, j+1] - x[i, j]) > 0:
-                ret[i,j] = 0
+        for j in range(n - 1):
+            if abs(x[i, j + 1] - x[i, j]) > 0:
+                ret[i, j] = 0
     return ret
 
 
@@ -69,8 +67,7 @@ class DealDataset(Dataset):
         self.len = LENGTH
         self.loader = loader
         # Deepfakes Face2Face FaceSwap NeuralTextures
-
-        fake_root = r'I:\01-Dataset\01-Images\00-FF++\Face2Face\c23\train/'
+        fake_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Face2Face/c23/train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -79,7 +76,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\c23\train/'
+        real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/c23/train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:
@@ -96,7 +93,7 @@ class DealDataset(Dataset):
             img_path = self.train_fake_imgs[video_index][img_index]
             img = self.loader(img_path)
 
-            mask_path = img_path.replace('c23','mask')
+            mask_path = img_path.replace('c23', 'mask')
 
             fake_mask = cv2.imread(mask_path, 0)
             fake_mask = np.array(cv2.resize(fake_mask, (SIZE, SIZE)) > 1, dtype=np.float64)
@@ -119,22 +116,22 @@ class DealDataset(Dataset):
             mask_up = torch.ones((1, 15, 16), dtype=torch.float32)
             mask_left = torch.ones((1, 16, 15), dtype=torch.float32)
 
-        return img, (mask_up,mask_left)
+        return img, (mask_up, mask_left)
 
     def __len__(self):
         return self.len
 
 
-def findthrehold(pred,label):
+def findthrehold(pred, label):
     best_acc = 0
     best_th = 0
-    for th in [0.8 + mom/1000 for mom in range(200)]:
-        threhold_acc = np.array(np.array(pred)>th,dtype=int)
-        acc = np.sum(threhold_acc == np.array(label))/2000
+    for th in [0.8 + mom / 1000 for mom in range(200)]:
+        threhold_acc = np.array(np.array(pred) > th, dtype=int)
+        acc = np.sum(threhold_acc == np.array(label)) / 2000
         if acc > best_acc:
             best_acc = acc
             best_th = th
-    return best_acc,best_th
+    return best_acc, best_th
 
 
 def getValdata(size):
@@ -158,6 +155,7 @@ def getValdata(size):
 
     return torch.stack(imgs, dim=0), labels
 
+
 def val(model):
     model.eval()
     ret_hist = []
@@ -167,21 +165,42 @@ def val(model):
         input = inputs.cuda()
         output1, output2 = model(input)
 
-        up = torch.sigmoid(output1).detach().cpu().numpy()[:,:,:-1,1:15]
-        down = torch.sigmoid(output1).detach().cpu().numpy()[:,:,1:,1:15]
-        left = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,:-1]
-        right = torch.sigmoid(output2).detach().cpu().numpy()[:,:,1:15,1:]
+        up = torch.sigmoid(output1).detach().cpu().numpy()[:, :, :-1, 1:15]
+        down = torch.sigmoid(output1).detach().cpu().numpy()[:, :, 1:, 1:15]
+        left = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:15, :-1]
+        right = torch.sigmoid(output3).detach().cpu().numpy()[:, :, 1:15, 1:]
 
-        sim_map = np.mean(np.concatenate((up, down, left, right), axis=1),axis=(1,2,3))
+        sim_map = np.mean(np.concatenate((up, down, left, right), axis=1), axis=(1, 2, 3))
         batch_sim_map_avg = list(sim_map)
 
         ret_hist += batch_sim_map_avg
         ret_labels += label
 
-    best_acc,best_th = findthrehold(ret_hist, ret_labels)
-    return best_acc,best_th
+    best_acc, best_th = findthrehold(ret_hist, ret_labels)
+    return best_acc, best_th
 
-real_root = r'I:\01-Dataset\01-Images\00-FF++\Real\c23\val'
+
+model = EfficientNet.from_pretrained('efficientnet-b0')
+
+
+class efficient(nn.Module):
+    def __init__(self, m):
+        super().__init__()
+        self.l = nn.Sequential()
+        self.l.add_module('conv_stem', m._conv_stem)
+        self.l.add_module('_bn0', m._bn0)
+        self.l.add_module('_blocks', nn.Sequential(*m._blocks)[:-5])
+        self.calsim_up = nn.Conv2d(112, 1, kernel_size=(2, 1), stride=1, bias=True)
+        self.calsim_left = nn.Conv2d(112, 1, kernel_size=(1, 2), stride=1, bias=True)
+
+    def forward(self, x):
+        x = self.l(x)
+        up = self.calsim_up(x)
+        left = self.calsim_left(x)
+        return up, left
+
+
+real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/c23/val/'
 test_real_video_paths = os.listdir(real_root)
 test_real_imgs = []
 for i in test_real_video_paths:
@@ -190,7 +209,7 @@ for i in test_real_video_paths:
     test_real_imgs.append([video_path + '/' + j for j in img])
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
-fake_root = r'I:\01-Dataset\01-Images\00-FF++\Face2Face\c23\val/'
+fake_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Face2Face/c23/val/'
 test_fake_video_paths = os.listdir(fake_root)
 test_fake_imgs = []
 for i in test_fake_video_paths:
@@ -201,19 +220,7 @@ for i in test_fake_video_paths:
 NUM_fake = len(test_fake_imgs)
 NUM_real = len(test_real_imgs)
 
-
-
-
-net = resnet18()
-pretext_model = torch.load(r'C:\Users\jumpycat\.cache\torch\checkpoints/resnet18-5c106cde.pth')
-model2_dict = net.state_dict()
-state_dict = {k: v for k, v in pretext_model.items() if k in model2_dict.keys()}
-state_dict.pop('fc.weight')
-state_dict.pop('fc.bias')
-model2_dict.update(state_dict)
-net.load_state_dict(model2_dict)
-
-net.to(device)
+net = efficient(model).to(device)
 dealDataset = DealDataset()
 train_loader = DataLoader(dataset=dealDataset, batch_size=BATCH_SIZE, shuffle=True)
 criterion = nn.BCEWithLogitsLoss()
@@ -225,26 +232,25 @@ if __name__ == '__main__':
         net.train()
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data
-            inputs, label1,label2 = inputs.to(device), labels[0].to(device), labels[1].to(device)
+            inputs, label1, label2 = inputs.to(device), labels[0].to(device), labels[1].to(device)
             optimizer.zero_grad()
             output1, output2 = net(inputs)
 
             loss1 = criterion(output1, label1)
             loss2 = criterion(output2, label2)
+
             loss = loss1 + loss2
             loss.backward()
             optimizer.step()
 
-
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('logs-c23-f2f.txt', 'a', encoding='utf-8') as f:
+            with open('runs/logs-f2f.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
 
-        best_acc,best_th = val(net)
+        best_acc, best_th = val(net)
 
-
-        tag = 'c23-f2f-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1,loss.item(),best_acc,best_th)
+        tag = 'f2f-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
         print(tag)
-        torch.save(net, r'trained_models\v3\c23/'+tag + '.pkl')
+        torch.save(net, r'models/' + tag + '.pkl')

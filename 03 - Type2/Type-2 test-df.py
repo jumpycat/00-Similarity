@@ -14,7 +14,7 @@ EPOCH = 100
 BATCH_SIZE = 64
 LR = 0.01
 SIZE = 256
-LENGTH = 64 * 300
+LENGTH = 64 * 200
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -23,7 +23,6 @@ preprocess = transforms.Compose([
     transforms.Resize((SIZE, SIZE)),
     transforms.ToTensor()
 ])
-
 
 def default_loader(path):
     img_pil = Image.open(path)
@@ -60,26 +59,6 @@ def Calsimleft(x):
             if abs(x[i, j + 1] - x[i, j]) > 0:
                 ret[i, j] = 0
     return ret
-
-def Calsimup_bank(x):
-    m, n = x.shape[0], x.shape[1]
-    ret = np.ones((m, n+2))
-    for i in range(2,m):
-        for j in range(1,n-1):
-            if abs(x[i, j] - x[i-2, j]) > 0:
-                ret[i, j] = 0
-    return ret
-
-
-def Calsimleft_bank(x):
-    m, n = x.shape[0], x.shape[1]
-    ret = np.ones((m+2, n))
-    for i in range(1,m-1):
-        for j in range(2,n):
-            if abs(x[i, j] - x[i, j-2]) > 0:
-                ret[i, j] = 0
-    return ret
-
 
 
 class DealDataset(Dataset):
@@ -123,16 +102,9 @@ class DealDataset(Dataset):
             fake_mask_left = Calsimleft(fake_mask1)
             fake_mask_up = torch.from_numpy(np.expand_dims(fake_mask_up, 0))
             fake_mask_left = torch.from_numpy(np.expand_dims(fake_mask_left, 0))
+
             mask_up = torch.tensor(fake_mask_up, dtype=torch.float32)
             mask_left = torch.tensor(fake_mask_left, dtype=torch.float32)
-
-
-            fake_mask_up_bank = Calsimup_bank(fake_mask1)
-            fake_mask_left_bank = Calsimleft_bank(fake_mask1)
-            fake_mask_up_bank = torch.from_numpy(np.expand_dims(fake_mask_up_bank, 0))
-            fake_mask_left_bank = torch.from_numpy(np.expand_dims(fake_mask_left_bank, 0))
-            mask_up_bank = torch.tensor(fake_mask_up_bank, dtype=torch.float32)
-            mask_left_bank = torch.tensor(fake_mask_left_bank, dtype=torch.float32)
 
         else:
             video_index = np.random.randint(0, self.NUM_real)
@@ -143,10 +115,7 @@ class DealDataset(Dataset):
             mask_up = torch.ones((1, 15, 16), dtype=torch.float32)
             mask_left = torch.ones((1, 16, 15), dtype=torch.float32)
 
-            mask_up_bank = torch.ones((1, 16, 18), dtype=torch.float32)
-            mask_left_bank = torch.ones((1, 18, 16), dtype=torch.float32)
-
-        return img, (mask_up, mask_up, mask_left, mask_left,mask_up_bank, mask_up_bank, mask_left_bank, mask_left_bank)
+        return img, (mask_up, mask_left)
 
     def __len__(self):
         return self.len
@@ -155,7 +124,7 @@ class DealDataset(Dataset):
 def findthrehold(pred, label):
     best_acc = 0
     best_th = 0
-    for th in [0.8 + mom / 1000 for mom in range(200)]:
+    for th in [0.7 + mom / 3000 for mom in range(300)]:
         threhold_acc = np.array(np.array(pred) > th, dtype=int)
         acc = np.sum(threhold_acc == np.array(label)) / 2000
         if acc > best_acc:
@@ -193,19 +162,14 @@ def val(model):
     for i in range(80):
         inputs, label = getValdata(25)
         input = inputs.cuda()
-        output1, output2,output3, output4,output5, output6,output7, output8 = model(input)
+        output1, output2 = model(input)
 
         up = torch.sigmoid(output1).detach().cpu().numpy()[:, :, :-1, 1:15]
-        down = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:, 1:15]
-        left = torch.sigmoid(output3).detach().cpu().numpy()[:, :, 1:15, :-1]
-        right = torch.sigmoid(output4).detach().cpu().numpy()[:, :, 1:15, 1:]
+        down = torch.sigmoid(output1).detach().cpu().numpy()[:, :, 1:, 1:15]
+        left = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:15, :-1]
+        right = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:15, 1:]
 
-        up_bank = torch.sigmoid(output5).detach().cpu().numpy()[:, :, 1:-1, 2:-2]
-        down_bank = torch.sigmoid(output6).detach().cpu().numpy()[:, :, 1:-1, 2:-2]
-        left_bank = torch.sigmoid(output7).detach().cpu().numpy()[:, :, 2:-2, 1:-1]
-        right_bank = torch.sigmoid(output8).detach().cpu().numpy()[:, :, 2:-2, 1:-1]
-
-        sim_map = np.mean(np.concatenate((up, down, left, right,up_bank,down_bank,left_bank,right_bank), axis=1), axis=(1, 2, 3))
+        sim_map = np.mean(np.concatenate((up, down, left, right), axis=1), axis=(1, 2, 3))
         batch_sim_map_avg = list(sim_map)
 
         ret_hist += batch_sim_map_avg
@@ -230,25 +194,11 @@ class efficient(nn.Module):
         self.calsim_left = nn.Conv2d(112, 1, kernel_size=(1, 2), stride=1, bias=True)
         self.calsim_right = nn.Conv2d(112, 1, kernel_size=(1, 2), stride=1, bias=True)
 
-        self.calsim_up_bank = nn.Conv2d(112, 1, kernel_size=(2, 1), stride=1, dilation=2,padding=1,bias=True)
-        self.calsim_down_bank = nn.Conv2d(112, 1, kernel_size=(2, 1), stride=1, dilation=2,padding=1,bias=True)
-        self.calsim_left_bank = nn.Conv2d(112, 1, kernel_size=(1, 2), stride=1, dilation=2,padding=1,bias=True)
-        self.calsim_right_bank = nn.Conv2d(112, 1, kernel_size=(1, 2), stride=1, dilation=2,padding=1,bias=True)
-
-
     def forward(self, x):
         x = self.l(x)
         up = self.calsim_up(x)
-        down = self.calsim_down(x)
         left = self.calsim_left(x)
-        right = self.calsim_right(x)
-
-        up_bank = self.calsim_up_bank(x)
-        down_bank = self.calsim_down_bank(x)
-        left_bank = self.calsim_left_bank(x)
-        right_bank = self.calsim_right_bank(x)
-
-        return up, down, left, right,up_bank, down_bank, left_bank, right_bank
+        return up, left
 
 
 real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/c23/val/'
@@ -283,35 +233,25 @@ if __name__ == '__main__':
         net.train()
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data
-            inputs, label1, label2, label3, label4, label5, label6, label7, label8 = \
-                inputs.to(device), labels[0].to(device), labels[1].to(device), labels[2].to(device), labels[3].to(
-                    device), labels[4].to(device), labels[5].to(device), labels[6].to(device), labels[7].to(
-                    device)
+            inputs, label1, label2 = inputs.to(device), labels[0].to(device), labels[1].to(device)
             optimizer.zero_grad()
-            output1, output2, output3, output4,output5, output6, output7, output8 = net(inputs)
+            output1, output2= net(inputs)
 
             loss1 = criterion(output1, label1)
             loss2 = criterion(output2, label2)
-            loss3 = criterion(output3, label3)
-            loss4 = criterion(output4, label4)
-            loss5 = criterion(output5, label5)
-            loss6 = criterion(output6, label6)
-            loss7 = criterion(output7, label7)
-            loss8 = criterion(output8, label8)
 
-
-            loss = loss1 + loss2 + loss3 + loss4 + loss5 + loss6 + loss7 + loss8
+            loss = loss1 + loss2
             loss.backward()
             optimizer.step()
 
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('runs/logs-df.txt', 'a', encoding='utf-8') as f:
+            with open('runs/logs-df-c23-2.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
 
         best_acc, best_th = val(net)
 
-        tag = 'df-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
+        tag = 'df-c23-2-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
         print(tag)
         torch.save(net, r'models/' + tag + '.pkl')

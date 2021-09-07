@@ -1,0 +1,3 @@
+raw-df-4-epoch-001-loss-0.848-ValAcc-0.770-Threshold-0.900
+raw-df-4-epoch-002-loss-0.272-ValAcc-0.993-Threshold-0.917
+raw-df-4-epoch-003-loss-0.208-ValAcc-0.996-Threshold-0.924

@@ -14,7 +14,7 @@ EPOCH = 100
 BATCH_SIZE = 64
 LR = 0.01
 SIZE = 256
-LENGTH = 64 * 300
+LENGTH = 64 * 200
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -116,7 +116,7 @@ class DealDataset(Dataset):
             mask_up = torch.ones((1, 15, 16), dtype=torch.float32)
             mask_left = torch.ones((1, 16, 15), dtype=torch.float32)
 
-        return img, (mask_up, mask_up, mask_left, mask_left)
+        return img, (mask_up,mask_left)
 
     def __len__(self):
         return self.len
@@ -125,7 +125,7 @@ class DealDataset(Dataset):
 def findthrehold(pred, label):
     best_acc = 0
     best_th = 0
-    for th in [0.8 + mom / 1000 for mom in range(200)]:
+    for th in [0.7 + mom / 3000 for mom in range(300)]:
         threhold_acc = np.array(np.array(pred) > th, dtype=int)
         acc = np.sum(threhold_acc == np.array(label)) / 2000
         if acc > best_acc:
@@ -163,12 +163,12 @@ def val(model):
     for i in range(80):
         inputs, label = getValdata(25)
         input = inputs.cuda()
-        output1, output2, output3, output4 = model(input)
+        output1, output2 = model(input)
 
         up = torch.sigmoid(output1).detach().cpu().numpy()[:, :, :-1, 1:15]
-        down = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:, 1:15]
-        left = torch.sigmoid(output3).detach().cpu().numpy()[:, :, 1:15, :-1]
-        right = torch.sigmoid(output4).detach().cpu().numpy()[:, :, 1:15, 1:]
+        down = torch.sigmoid(output1).detach().cpu().numpy()[:, :, 1:, 1:15]
+        left = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:15, :-1]
+        right = torch.sigmoid(output2).detach().cpu().numpy()[:, :, 1:15, 1:]
 
         sim_map = np.mean(np.concatenate((up, down, left, right), axis=1), axis=(1, 2, 3))
         batch_sim_map_avg = list(sim_map)
@@ -198,10 +198,8 @@ class efficient(nn.Module):
     def forward(self, x):
         x = self.l(x)
         up = self.calsim_up(x)
-        down = self.calsim_down(x)
         left = self.calsim_left(x)
-        right = self.calsim_right(x)
-        return up, down, left, right
+        return up, left
 
 
 real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/c23/val/'
@@ -236,29 +234,26 @@ if __name__ == '__main__':
         net.train()
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data
-            inputs, label1, label2, label3, label4 = \
-                inputs.to(device), labels[0].to(device), labels[1].to(device), labels[2].to(device), labels[3].to(
-                    device)
+            inputs, label1, label2 = inputs.to(device), labels[0].to(device), labels[1].to(device)
             optimizer.zero_grad()
-            output1, output2, output3, output4 = net(inputs)
+            output1, output2 = net(inputs)
 
             loss1 = criterion(output1, label1)
             loss2 = criterion(output2, label2)
-            loss3 = criterion(output3, label3)
-            loss4 = criterion(output4, label4)
 
-            loss = loss1 + loss2 + loss3 + loss4
+
+            loss = loss1 + loss2
             loss.backward()
             optimizer.step()
 
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('runs/logs-f2f.txt', 'a', encoding='utf-8') as f:
+            with open('runs/logs-f2f-c23-2.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
 
         best_acc, best_th = val(net)
 
-        tag = 'f2f-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
+        tag = 'f2f-c23-2-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
         print(tag)
         torch.save(net, r'models/' + tag + '.pkl')

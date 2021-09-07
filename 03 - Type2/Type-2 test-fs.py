@@ -67,7 +67,7 @@ class DealDataset(Dataset):
         self.len = LENGTH
         self.loader = loader
         # Deepfakes Face2Face FaceSwap NeuralTextures
-        fake_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/FaceSwap/c23/train/'
+        fake_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/FaceSwap/raw/train/'
         train_fake_video_paths = os.listdir(fake_root)
 
         self.train_fake_imgs = []
@@ -76,7 +76,7 @@ class DealDataset(Dataset):
             img = os.listdir(video_path)
             self.train_fake_imgs.append([video_path + '/' + j for j in img])
 
-        real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/c23/train/'
+        real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/raw/train/'
         train_real_video_paths = os.listdir(real_root)
         self.train_real_imgs = []
         for i in train_real_video_paths:
@@ -93,7 +93,7 @@ class DealDataset(Dataset):
             img_path = self.train_fake_imgs[video_index][img_index]
             img = self.loader(img_path)
 
-            mask_path = img_path.replace('c23', 'mask')
+            mask_path = img_path.replace('raw', 'mask')
 
             fake_mask = cv2.imread(mask_path, 0)
             fake_mask = np.array(cv2.resize(fake_mask, (SIZE, SIZE)) > 1, dtype=np.float64)
@@ -204,7 +204,7 @@ class efficient(nn.Module):
         return up, down, left, right
 
 
-real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/c23/val/'
+real_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/Real/raw/val/'
 test_real_video_paths = os.listdir(real_root)
 test_real_imgs = []
 for i in test_real_video_paths:
@@ -213,7 +213,7 @@ for i in test_real_video_paths:
     test_real_imgs.append([video_path + '/' + j for j in img])
 
 # Deepfakes Face2Face FaceSwap NeuralTextures
-fake_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/FaceSwap/c23/val/'
+fake_root = r'/data2/Jianwei-Fei/00-Dataset/01-Images/00-FF++/FaceSwap/raw/val/'
 test_fake_video_paths = os.listdir(fake_root)
 test_fake_imgs = []
 for i in test_fake_video_paths:
@@ -253,12 +253,12 @@ if __name__ == '__main__':
 
             data = '[epoch:%03d, iter:%03d] Loss: %.03f' % (epoch + 1, i, loss.item())
             print(data)
-            with open('runs/logs-fs.txt', 'a', encoding='utf-8') as f:
+            with open('runs/logs-fs-raw.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
 
         best_acc, best_th = val(net)
 
-        tag = 'fs-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
+        tag = 'fs-raw-epoch-%03d-loss-%.03f-ValAcc-%.03f-Threshold-%.03f' % (epoch + 1, loss.item(), best_acc, best_th)
         print(tag)
         torch.save(net, r'models/' + tag + '.pkl')
