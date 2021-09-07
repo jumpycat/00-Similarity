@@ -37,8 +37,8 @@ class LHPF(nn.Module):
     def forward(self, x):
         self.reset_parameters()
         x1 = F.conv2d(x, self.weight.cuda(device),padding=2)
-        # out = torch.cat((x1,x),dim=1)
-        return x1
+        out = torch.cat((x1,x),dim=1)
+        return out
 
 
 class MISLnet(nn.Module):
@@ -135,10 +135,10 @@ def train():
 
             data = '[epoch:%03d, iter:%03d] Loss: %.03f Acc: %.03f' % (epoch + 1, i, loss.item(), acc)
             print(data)
-            with open('logs-nt-c40-lsrm8.txt', 'a', encoding='utf-8') as f:
+            with open('logs-nt-c40-lsrm1.txt', 'a', encoding='utf-8') as f:
                 f.write(data)
                 f.write('\n')
-        tag = 'EXP7 -  epoch-%03d-loss-%.03f-Acc-%.03f' % (epoch + 1, loss.item(), acc)
+        tag = 'EXP1 -  epoch-%03d-loss-%.03f-Acc-%.03f' % (epoch + 1, loss.item(), acc)
         torch.save(net, 'models/nt-c40-lsrm/' + tag + '.pkl')
 
 def train2():
